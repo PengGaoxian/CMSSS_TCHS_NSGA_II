@@ -1,0 +1,1 @@
+运行paint_Data.m文件，直接显示结果，注意：paint_Data.m中生成数据的代码已经注释，如果想重新生成可以解除%% Generate the data区块（7-28行）的注释
