@@ -23,16 +23,16 @@
 
 | 算法 | 主文件 | 调度函数 | 说明 |
 |------|--------|----------|------|
-| FSGS | `Main_FSGS.m` | `scheduling_Makespan.m` | 纯正向调度，以最早可用时间为准（MOS 策略） |
-| MEOS | `Main_MEOS.m` | `scheduling_Makespan_Energy.m` | 正向调度确定 makespan 后，**反向**遍历将子任务移至衔接度更高的时间窗口 |
-| EOS | `Main_EOS.m` | `scheduling_Energy.m` | **正向**遍历将服务窗口向空闲段右端移动（最大化后向衔接度），不保证 makespan 不变 |
-| ESGS-Forward | `Main_ESGS_Forward.m` | `scheduling_Makespan_Energy_Forward.m` | 正向调度确定 makespan 后，**正向**遍历移动窗口以降低预热能耗 |
-| **TCHS** | `Main_TCHS.m` | — | **论文提出方法**：后处理合并 MEOS 与 EOS 的帕累托前沿，取外包络得到联合帕累托前沿 |
+| NSGA-II | `Main_FSGS.m` | `scheduling_Makespan.m` | 纯正向调度，以最早可用时间为准（MOS 策略） |
+| MEOS-NSGA-II | `Main_MEOS.m` | `scheduling_Makespan_Energy.m` | TCHS-NSGA-II 的消融算法，仅使用 MEOS 调度策略（反向遍历） |
+| EOS-NSGA-II | `Main_EOS.m` | `scheduling_Energy.m` | TCHS-NSGA-II 的消融算法，仅使用 EOS 调度策略（正向遍历） |
+| ESGS-NSGA-II | `Main_ESGS_Forward.m` | `scheduling_Makespan_Energy_Forward.m` | 正向调度确定 makespan 后，**正向**遍历移动窗口以降低预热能耗 |
+| **TCHS-NSGA-II** | `Main_TCHS.m` | — | **论文提出方法**：并行运行 MEOS 和 EOS 两种调度策略，合并两者帕累托前沿取外包络得到联合帕累托前沿 |
 | MOEA/D | `Main_MOEAD.m` | `scheduling_Makespan.m` | Tchebycheff 分解框架，邻域协作进化（FSGS 调度策略） |
 | MOPSO | `Main_MOPSO.m` | `scheduling_Makespan.m` | 多目标粒子群，外部存档维护帕累托前沿（FSGS 调度策略） |
 
-> **TCHS 原理**：分别独立运行 MEOS 和 EOS，将两者最后一代帕累托前沿合并去重后重新计算联合帕累托前沿，
-> 同时记录逐代 HV 历史用于收敛曲线对比。
+> **TCHS 原理**：并行运行 MEOS（反向遍历）和 EOS（正向遍历）两种调度策略，将各自收敛后的帕累托前沿合并去重后重新计算联合帕累托前沿，
+> 同时记录逐代 HV 历史用于收敛曲线对比。EOS-NSGA-II 与 MEOS-NSGA-II 为对应的消融算法。
 
 ## 运行方式
 
