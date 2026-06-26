@@ -1,9 +1,24 @@
-%% 通过种群的上层目标最小化和底层目标最小化寻找帕累托前沿个体
-% 输入
-%   Fitness_top：种群中个体的上层目标
-%   Fitness_bottom：种群中个体的底层目标
-% 输出
-%   Individual_front：种群中的帕累托前沿个体
+% 功能：对种群执行非支配排序，为每个个体分配 Pareto 层级编号（front_num）。
+%       层级越小（第 1 层）表示越优，第 1 层即当前种群的 Pareto 最优前沿。
+%
+% 输入：
+%   Fitness_value - 目标值矩阵 [population_size × 2]，
+%                   第 1 列为上层适应度（能耗，越小越好），
+%                   第 2 列为下层适应度（QoS，越小越好，Inf 表示不可行解）
+%
+% 处理流程：
+%   采用逐层剥离算法：
+%   1. 初始化标记数组 Individual_label（false = 尚未分层）
+%   2. 每轮从未标记个体中找出当前非支配集：
+%      对个体 i，遍历所有未标记个体 j，若存在 j 在两个目标上均不劣于 i
+%      且至少一个目标严格优于 i（严格支配），则 i 的被支配计数 +1；
+%      被支配计数为 0 的个体归入当前层
+%   3. 将本轮找到的非支配个体标记为已分层，front_num +1，进入下一轮
+%   4. 直到所有个体均已分层
+%
+% 输出：
+%   Individual_front_num - 层级编号列向量 [population_size × 1]，
+%                          值为 1 表示第一 Pareto 前沿（最优），数值越大越差
 function [Individual_front_num] = pareto_front(Fitness_value)
 Fitness_top = Fitness_value(:,1);
 Fitness_bottom = Fitness_value(:,2);

@@ -1,10 +1,25 @@
-%% 获取下一代Population在Population_combined中的序号index
-% 输入
-%   Fitness_value：组合种群的适应度值
-%   front_num：组合种群的前沿编号
-%   population_size：种群大小
-% 输出
-%   index：选出的Population中的个体在Population_combined中的序号
+% 功能：从扩展种群 Population_combined 中按 NSGA-II 精英选择策略
+%       选出 population_size 个个体构成下一代种群，同时返回第 1 层前沿的个体索引。
+%
+% 输入：
+%   Fitness_value    - 目标值矩阵 [N × 2]，N 为扩展种群大小
+%   front_num        - 各个体的 Pareto 层级编号列向量 [N × 1]，由 pareto_front 计算
+%   population_size  - 目标种群大小
+%
+% 处理流程：
+%   1. 取第 1 层前沿索引作为 front_index（用于记录历代最优前沿）
+%   2. 从第 1 层开始累计计算前 k 层的个体总数，找到恰好使累计数 ≥ population_size
+%      的最小层级 front_num_ge
+%   3a. 若累计数 > population_size（最后一层只能部分纳入）：
+%       · 将前 front_num_ge-1 层的所有个体直接填入 Population_index
+%       · 对第 front_num_ge 层调用 crowd_distance 计算拥挤距离，
+%         按拥挤距离降序排列后取前 (population_size - 已有数量) 个个体补齐
+%   3b. 若累计数 == population_size：
+%       将前 front_num_ge 层的所有个体直接作为 Population_index
+%
+% 输出：
+%   Population_index - 下一代种群个体在 Population_combined 中的行索引 [population_size × 1]
+%   front_index      - 第 1 层 Pareto 前沿个体在 Population_combined 中的行索引
 function [Population_index,front_index] = select_population(Fitness_value,front_num,population_size)
     Population_index = zeros(population_size,1);
     front_index = find(front_num==1);

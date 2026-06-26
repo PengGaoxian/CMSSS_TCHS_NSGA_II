@@ -1,13 +1,35 @@
-%% 计算种群中每个个体完成任务的总时间（在makespan最短的情况下优化Energy）
-% 输入
-%   Population：种群
-%   Ts：候选服务时长数据集
-%   Idle：候选服务空闲时间数据集
-%   ordertime：任务下单时刻
-%   Tl：物流时长
-% 输出
-%   Start_candidate_service：候选服务执行相应子任务的时刻
-%   End_candidate_service：候选服务完成相应子任务的时刻
+% 功能：为种群中每个个体计算各子任务的服务开始/结束时间（ESGS 策略）。
+%       第一阶段正向调度确定 makespan，第二阶段从后向前反向遍历，
+%       在不延误后续子任务的前提下将服务窗口向衔接度更高的位置移动，以降低预热能耗。
+%
+% 输入：
+%   Population         - 种群矩阵 [population_size × subtask_num]，元素为候选服务序号
+%   Th                 - 预热时长矩阵 [candidate_service_num × subtask_num]
+%   Tc                 - 冷却时长矩阵 [candidate_service_num × subtask_num]
+%   Ds                 - 服务时长矩阵 [candidate_service_num × subtask_num]
+%   Idle               - 空闲时段 cell [candidate_service_num × subtask_num]
+%   ordertime          - 任务下单时刻（调度起始时间）
+%   Time_required_max  - 用户要求的最大完成时间（deadline = ordertime + Time_required_max）
+%   Dl                 - 物流时长矩阵 [population_size × subtask_num]，由 logistics 计算
+%
+% 处理流程：
+%   对每个个体 k：
+%   【第一阶段：正向调度确定 makespan】
+%     从 ordertime 出发，依次为每个子任务 i 找到满足空闲约束的最早可用时间窗口：
+%     - 若 start_time 落在占用段内，推移至该占用段结束；
+%     - 若执行区间跨越多个空闲段，推移至下一占用段结束后重试；
+%     - 若超出 deadline，直接记录（标记为不可行解）；
+%     下一子任务 start_time = 当前结束时间 + 物流时长
+%   【第二阶段：反向遍历优化能耗（从第 subtask_num-1 到第 1 个子任务）】
+%     计算当前窗口的衔接度 cohesion；若 cohesion < 1 表示有优化空间：
+%     - 若空闲段右端 + 物流时长 ≤ 下一子任务开始时间：
+%       将结束时间贴近空闲段右端（最大化后向衔接），更新 start_time
+%     - 否则：将结束时间设为 下一子任务开始时间 - 物流时长，
+%       计算新衔接度，仅当新衔接度更高时才接受调整
+%
+% 输出：
+%   Start_candidate_service - 服务执行开始时间矩阵 [population_size × subtask_num]
+%   End_candidate_service   - 服务执行结束时间矩阵 [population_size × subtask_num]
 function [Start_candidate_service,End_candidate_service] = scheduling_Makespan_Energy(Population,Th,Tc,Ds,Idle,ordertime,Time_required_max,Dl)
 [population_size,subtask_num] = size(Population);
 Start_candidate_service = zeros(population_size,subtask_num); % 定义cs_ji的开始时间矩阵
@@ -32,10 +54,19 @@ for k = 1:population_size
                 Start_candidate_service(k,i) = start_time;
                 End_candidate_service(k,i) = end_time;
                 break;
+            elseif isempty(start_time_next_index) % start_time已超出所有空闲时段
+                Start_candidate_service(k,i) = start_time;
+                End_candidate_service(k,i) = end_time;
+                break;
             elseif mod(start_time_next_index,2)==1 % start_time处于占用时间段
                 start_time = Periods(start_time_next_index);
             elseif mod(start_time_next_index,2) == 0 % start_time处于空闲时间段
                 if start_time_next_index ~= end_time_prev_index+1 % end_time与start_time不在同一空闲时间段
+                    if start_time_next_index+1 > numel(Periods)
+                        Start_candidate_service(k,i) = start_time;
+                        End_candidate_service(k,i) = end_time;
+                        break;
+                    end
                     start_time = Periods(start_time_next_index+1);
                 elseif start_time_next_index == end_time_prev_index+1 % end_time与start_time在同一空闲时间段
                     Start_candidate_service(k,i) = start_time;

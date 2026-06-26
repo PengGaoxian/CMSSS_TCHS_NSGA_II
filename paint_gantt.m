@@ -1,12 +1,28 @@
-%% 画组合调度方案的甘特图
-% 输入
-%   Individual：待画甘特图的个体
-%   Occupancy：候选服务的占用情况
-%   Time_elasticity：Time_required_max延伸后的时间
-%   Individual_Start_candidate_service：个体的服务开始时间
-%   Individual_End_candidate_service：个体的服务结束时间
-%   Individual_Start_logistics：个体的物流开始时间
-%   Individual_End_logistics：个体的物流结束时间
+% 功能：为云制造服务组合调度方案绘制甘特图，
+%       在同一时间轴上展示每个子任务的服务占用时段（灰色）、
+%       服务执行时段（绿色）和相邻子任务间的物流时段（蓝色）。
+%
+% 输入：
+%   Individual                          - 个体行向量 [1 × subtask_num]，
+%                                         每个元素为对应子任务所选候选服务的序号
+%   Occupancy                           - 占用时段 cell [candidate_service_num × subtask_num]，
+%                                         每元素为 2×m 矩阵（第1行=占用开始，第2行=占用结束）
+%   Time_elasticity                     - 时间轴上界（deadline × elastic_coefficient）
+%   Individual_Start_candidate_service  - 服务执行开始时间行向量 [1 × subtask_num]
+%   Individual_End_candidate_service    - 服务执行结束时间行向量 [1 × subtask_num]
+%   Individual_Start_logistic           - 物流开始时间行向量 [1 × subtask_num]
+%   Individual_End_logistic             - 物流结束时间行向量 [1 × subtask_num]
+%
+% 处理流程：
+%   对每个子任务 i（y 轴坐标为 i）：
+%   1. 从 Occupancy{服务序号, i} 取出所有占用时段，逐段绘制灰色矩形
+%   2. 绘制绿色矩形表示该子任务的服务执行时段，并标注子任务序号
+%   3. 若不是最后一个子任务，绘制蓝色矩形表示到下一子任务的物流时段，
+%      并标注"当前服务序号.下一服务序号"格式的文本
+%   完成后设置坐标轴范围、刻度、标签和图窗尺寸
+%
+% 输出：（图窗，不保存文件）
+%   甘特图：x 轴为时间，y 轴为子任务编号，三色区块直观展示调度方案时序结构
 function [] = paint_gantt(Individual,Occupancy,Time_elasticity,Individual_Start_candidate_service,Individual_End_candidate_service,Individual_Start_logistic,Individual_End_logistic)
 [~,subtask_num] = size(Individual);
 figure;
